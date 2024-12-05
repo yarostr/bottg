@@ -20,9 +20,12 @@ async def main():
 
     except SessionPasswordNeededError:
         # В случае двухфакторной авторизации
-        password = input("Введите двухфакторный пароль: ")
-        await client.start(phone=phone, password=password)
-        print("Авторизация успешна!")
+        password = os.getenv('TELEGRAM_PASSWORD')  # Получаем пароль из переменной окружения
+        if password:
+            await client.start(phone=phone, password=password)
+            print("Авторизация успешна с двухфакторным паролем!")
+        else:
+            print("Ошибка: Не установлен пароль для двухфакторной аутентификации.")
 
     # Запрос информации о группе
     group_link = input("Введите ссылку на группу или её юзернейм: ")
