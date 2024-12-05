@@ -12,8 +12,9 @@ phone = '+79123456789'
 client = TelegramClient(session_name, api_id, api_hash)
 
 async def main():
-    # Проверяем, есть ли сохраненная сессия
+    # Попытка авторизации
     try:
+        # Это будет автоматически использовать сессию, если она есть
         await client.start(phone=phone)
         print("Авторизация успешна!")
     except SessionPasswordNeededError:
