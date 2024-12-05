@@ -8,7 +8,7 @@ session_name = 'my_session'
 client = TelegramClient(session_name, api_id, api_hash)
 
 async def main():
-    phone = input("Введите номер телефона в формате +<код страны><номер>: ")
+    phone = input("Введите номер телефона в формате +<7><9873000294>: ")
 
     # Попытка авторизации
     await client.start(phone=lambda: phone)
