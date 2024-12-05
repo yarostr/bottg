@@ -14,7 +14,7 @@ async def send_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"ID этого чата: {chat_id}")
 
 # Функция для отправки уведомлений в конкретный чат
-async def send_notification_to_admin(message: str, chat_link: str, removed_count: int):
+async def send_notification_to_admin(context: ContextTypes.DEFAULT_TYPE, message: str, chat_link: str, removed_count: int):
     try:
         # Отправляем уведомление в чат с ID NOTIFY_CHAT_ID
         await context.bot.send_message(
@@ -48,7 +48,7 @@ async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 print(f"Не удалось разблокировать пользователя с ID {user_id}: {e}")
         
         # Отправляем уведомление о завершении разблокировки в нужный чат
-        await send_notification_to_admin("Все заблокированные пользователи были разблокированы.", chat_link, removed_count)
+        await send_notification_to_admin(context, "Все заблокированные пользователи были разблокированы.", chat_link, removed_count)
     
     except Exception as e:
         await update.message.reply_text(f"Произошла ошибка при попытке разблокировать пользователей: {str(e)}")
