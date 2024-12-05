@@ -6,7 +6,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 BOT_TOKEN = "7411390045:AAEU9UqxnwRexaIvXO4bTl4yMZkvkik75Gw"
 
 # Список ID пользователей, которых нужно разблокировать (например, сохраняйте их в базе данных)
-blocked_user_ids = [123456789, 987654321, 112233445]  # Пример ID пользователей, которых заблокировали
+blocked_user_ids = [292525734]  # Пример ID пользователей, которых заблокировали
 
 # Функция для разблокировки всех пользователей по ID
 async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
