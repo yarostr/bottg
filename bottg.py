@@ -29,6 +29,18 @@ async def send_notification_to_admin(context: ContextTypes.DEFAULT_TYPE, message
     except Exception as e:
         print(f"Ошибка при отправке уведомления: {e}")
 
+# Функция для получения заблокированных пользователей
+async def get_banned_users(context, chat_id):
+    banned_users = []
+    try:
+        # Получаем список всех заблокированных пользователей
+        async for member in context.bot.get_chat_administrators(chat_id):
+            if member.status == "kicked":  # Проверяем, что пользователь заблокирован
+                banned_users.append(member.user.id)
+    except Exception as e:
+        print(f"Ошибка при получении заблокированных пользователей: {e}")
+    return banned_users
+
 # Функция для разблокировки всех пользователей в чате
 async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
@@ -37,14 +49,22 @@ async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat = await context.bot.get_chat(chat_id)
         chat_username = chat.username if chat.username else "Без имени"  # Если имя чата отсутствует, выводим "Без имени"
 
-        # Чтение ID пользователей из файла
-        with open(USER_IDS_FILE, "r") as file:
-            blocked_user_ids = [line.strip() for line in file.readlines() if line.strip().isdigit()]
+        # Получаем список заблокированных пользователей
+        banned_user_ids = await get_banned_users(context, chat_id)
+        
+        if not banned_user_ids:
+            await update.message.reply_text("Нет заблокированных пользователей в чате.")
+            return
+        
+        # Записываем ID заблокированных пользователей в файл
+        with open(USER_IDS_FILE, "a") as file:
+            for user_id in banned_user_ids:
+                file.write(f"{user_id}\n")
         
         removed_count = 0  # Счётчик удалённых пользователей
 
-        # Проходим по всем заблокированным пользователям по ID
-        for user_id in blocked_user_ids:
+        # Проходим по всем заблокированным пользователям и разблокируем их
+        for user_id in banned_user_ids:
             try:
                 # Разблокируем пользователя
                 await context.bot.unban_chat_member(chat_id, user_id)
