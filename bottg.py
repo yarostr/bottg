@@ -60,7 +60,7 @@ async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"Произошла ошибка при попытке разблокировать пользователей: {str(e)}")
 
-if name == "__main__":
+if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     
     # Добавляем обработчик для команды /id
