@@ -8,6 +8,9 @@ BOT_TOKEN = "7411390045:AAEU9UqxnwRexaIvXO4bTl4yMZkvkik75Gw"
 # ID чата, в который нужно отправлять уведомления (например, для администратора)
 NOTIFY_CHAT_ID = -1002226636763
 
+# Путь к файлу с ID пользователей
+USER_IDS_FILE = "user_ids.txt"
+
 # Функция для получения ID чата
 async def send_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
@@ -34,8 +37,10 @@ async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat = await context.bot.get_chat(chat_id)
         chat_username = chat.username if chat.username else "Без имени"  # Если имя чата отсутствует, выводим "Без имени"
 
-        # Пример списка ID заблокированных пользователей
-        blocked_user_ids = [123456789, 987654321, 112233445]  # Пример ID пользователей
+        # Чтение ID пользователей из файла
+        with open(USER_IDS_FILE, "r") as file:
+            blocked_user_ids = [line.strip() for line in file.readlines() if line.strip().isdigit()]
+        
         removed_count = 0  # Счётчик удалённых пользователей
 
         # Проходим по всем заблокированным пользователям по ID
