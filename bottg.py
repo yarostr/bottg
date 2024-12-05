@@ -5,18 +5,23 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 # Ваш токен
 BOT_TOKEN = "7411390045:AAEU9UqxnwRexaIvXO4bTl4yMZkvkik75Gw"
 
-# Список ID пользователей, которых нужно разблокировать (например, сохраняйте их в базе данных)
-blocked_user_ids = [292525734]  # Пример ID пользователей, которых заблокировали
+# Функция для получения ID чата
+async def send_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
+    await update.message.reply_text(f"ID этого чата: {chat_id}")
 
-# Функция для разблокировки всех пользователей по ID
+# Функция для разблокировки всех пользователей в чате
 async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     
     try:
+        # Пример списка ID заблокированных пользователей
+        blocked_user_ids = [292525734]  # Пример ID пользователей
+
         # Проходим по всем заблокированным пользователям по ID
         for user_id in blocked_user_ids:
             try:
-                # Разблокируем пользователя, если его ID есть в списке
+                # Разблокируем пользователя
                 await context.bot.unban_chat_member(chat_id, user_id)
                 print(f"Пользователь с ID {user_id} был разблокирован.")
                 
@@ -30,6 +35,11 @@ async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
+    
+    # Добавляем обработчик для команды /id
+    app.add_handler(CommandHandler("id", send_chat_id))
+    
+    # Добавляем обработчик для команды /unbanall
     app.add_handler(CommandHandler("unbanall", unban_all))
 
     # Публичный URL вашего проекта на Railway
