@@ -1,24 +1,18 @@
 from telethon import TelegramClient
 from telethon.tl.types import ChannelParticipantsKicked
+import os
 
-# Ваши данные для авторизации
-api_id = 29733643
-api_hash = 'fe6374e0aa4792328113106ac12a8bed'
-session_name = 'my_session'  # Имя файла сессии
+# Чтение переменных окружения из Railway
+api_id = int(os.getenv('API_ID'))
+api_hash = os.getenv('API_HASH')
+session_name = 'my_session'
 
 # Создание клиента
 client = TelegramClient(session_name, api_id, api_hash)
 
 async def get_banned_users(group_link):
-    # Получаем объект группы по ссылке или юзернейму
     group = await client.get_entity(group_link)
-
-    # Получаем список пользователей, забаненных в группе
-    banned_users = await client.get_participants(
-        group, 
-        filter=ChannelParticipantsKicked()
-    )
-
+    banned_users = await client.get_participants(group, filter=ChannelParticipantsKicked())
     return banned_users
 
 async def main():
