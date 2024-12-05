@@ -16,7 +16,7 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("unbanall", unban_all))
 
     # Получаем публичный URL из переменных среды, которые настроены на Railway
-    WEBHOOK_URL = f"https://{os.environ.get('RAILWAY_STATIC_URL')}/bot{BOT_TOKEN}"
+    WEBHOOK_URL = f"https://{os.environ.get('bottg-production-33d1.up.railway.app')}/bot{BOT_TOKEN}"
 
     app.run_webhook(
         listen="0.0.0.0",
