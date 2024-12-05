@@ -5,19 +5,22 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 # Ваш токен
 BOT_TOKEN = "7411390045:AAEU9UqxnwRexaIvXO4bTl4yMZkvkik75Gw"
 
-# Функция для разблокировки всех пользователей
 async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     
     try:
-        # Получаем список всех заблокированных пользователей
-        banned_users = await context.bot.get_chat_banned(chat_id)
-        
-        # Разблокируем каждого пользователя
-        for user in banned_users:
-            await context.bot.unban_chat_member(chat_id, user.user.id)
-        
-        await update.message.reply_text("Все заблокированные пользователи были разблокированы. наверное")
+        # Получаем количество участников чата
+        members_count = await context.bot.get_chat_members_count(chat_id)
+
+        # Проходим по всем участникам
+        for i in range(members_count):
+            member = await context.bot.get_chat_member(chat_id, i)
+
+            # Проверяем, заблокирован ли пользователь
+            if member.status == 'kicked':  # 'kicked' означает, что пользователь заблокирован
+                await context.bot.unban_chat_member(chat_id, member.user.id)
+
+        await update.message.reply_text("Все заблокированные пользователи были разблокированы.")
     
     except Exception as e:
         await update.message.reply_text(f"Произошла ошибка при попытке разблокировать пользователей: {str(e)}")
