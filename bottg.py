@@ -20,7 +20,7 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("unbanall", unban_all))
 
     # Получаем публичный URL вашего проекта на Railway (например, bottg.up.railway.app)
-    WEBHOOK_URL = "https://bottg.up.railway.app/bot" + BOT_TOKEN
+    WEBHOOK_URL = "bottg-production-33d1.up.railway.app" + BOT_TOKEN
 
     app.run_webhook(
         listen="0.0.0.0",
