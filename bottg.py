@@ -13,7 +13,7 @@ async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if user.status == "kicked":
             await context.bot.unban_chat_member(chat_id, user.user.id)
     
-    await update.message.reply_text("Все заблокированные пользователи были разблокированы.")
+    await update.message.reply_text("Все заблокированные пользователи были разблокированы. вроде")
 
 if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
