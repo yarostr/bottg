@@ -1,30 +1,27 @@
-import os
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
-# Получаем токен из переменной окружения
-BOT_TOKEN = os.environ.get("7411390045:AAEU9UqxnwRexaIvXO4bTl4yMZkvkik75Gw")
+# Ваш токен бота
+BOT_TOKEN = "7411390045:AAEU9UqxnwRexaIvXO4bTl4yMZkvkik75Gw"
 
 async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-
-    # Получаем информацию о заблокированных пользователях по диапазону user_id
-    user_id_range = range(0, 10000000)  # Можно уточнить диапазон
-
     unbanned_count = 0
-    for user_id in user_id_range:
+
+    # Попытка разблокировать всех пользователей по диапазону ID
+    for user_id in range(1, 100000):  # Диапазон можно регулировать
         try:
             await context.bot.unban_chat_member(chat_id, user_id)
             unbanned_count += 1
         except Exception:
-            pass  # Игнорируем ошибки, если пользователь не забанен или не существует
-    
+            pass  # Игнорируем ошибки для пользователей, которых нельзя разблокировать
+
     await update.message.reply_text(f"Разблокировано {unbanned_count} пользователей.")
 
 if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     
-    # Добавляем обработчик команды /unbanall
+    # Обработка команды /unbanall
     app.add_handler(CommandHandler("unbanall", unban_all))
 
     print("Бот запущен...")
