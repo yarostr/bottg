@@ -1,5 +1,6 @@
 from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError
+import os
 
 # Ваши данные для авторизации
 api_id = 29733643
@@ -7,16 +8,16 @@ api_hash = 'fe6374e0aa4792328113106ac12a8bed'
 session_name = 'my_session'
 
 # Номер телефона, который вы хотите использовать для авторизации
-phone = '+79123456789'
+phone = '+79123456789'  # Укажите свой номер телефона явно
 
 client = TelegramClient(session_name, api_id, api_hash)
 
 async def main():
-    # Попытка авторизации
     try:
-        # Это будет автоматически использовать сессию, если она есть
+        # Попытка авторизации
         await client.start(phone=phone)
         print("Авторизация успешна!")
+
     except SessionPasswordNeededError:
         # В случае двухфакторной авторизации
         password = input("Введите двухфакторный пароль: ")
