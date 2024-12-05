@@ -14,13 +14,13 @@ async def send_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"ID этого чата: {chat_id}")
 
 # Функция для отправки уведомлений в конкретный чат
-async def send_notification_to_admin(context: ContextTypes.DEFAULT_TYPE, message: str, chat_link: str, removed_count: int):
+async def send_notification_to_admin(context: ContextTypes.DEFAULT_TYPE, message: str, chat_username: str, removed_count: int):
     try:
         # Отправляем уведомление в чат с ID NOTIFY_CHAT_ID
         await context.bot.send_message(
             NOTIFY_CHAT_ID,
             f"{message}\n\n"
-            f"Чат: {chat_link}\n"
+            f"Чат: @{chat_username}\n"
             f"Количество удалённых пользователей: {removed_count}"
         )
     except Exception as e:
@@ -29,11 +29,13 @@ async def send_notification_to_admin(context: ContextTypes.DEFAULT_TYPE, message
 # Функция для разблокировки всех пользователей в чате
 async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
-    chat_link = f"https://t.me/c/{str(abs(chat_id))[1:]}"  # Ссылка на чат, исключая "-"
-    
     try:
+        # Получаем информацию о чате
+        chat = await context.bot.get_chat(chat_id)
+        chat_username = chat.username if chat.username else "Без имени"  # Если имя чата отсутствует, выводим "Без имени"
+
         # Пример списка ID заблокированных пользователей
-        blocked_user_ids = [292525734]  # Пример ID пользователей
+        blocked_user_ids = [123456789, 987654321, 112233445]  # Пример ID пользователей
         removed_count = 0  # Счётчик удалённых пользователей
 
         # Проходим по всем заблокированным пользователям по ID
@@ -48,7 +50,7 @@ async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 print(f"Не удалось разблокировать пользователя с ID {user_id}: {e}")
         
         # Отправляем уведомление о завершении разблокировки в нужный чат
-        await send_notification_to_admin(context, "Все заблокированные пользователи были разблокированы.", chat_link, removed_count)
+        await send_notification_to_admin(context, "Все заблокированные пользователи были разблокированы.", chat_username, removed_count)
     
     except Exception as e:
         await update.message.reply_text(f"Произошла ошибка при попытке разблокировать пользователей: {str(e)}")
