@@ -26,6 +26,7 @@ async def send_notification_to_admin(context: ContextTypes.DEFAULT_TYPE, message
             f"Чаты:\n{chat_links}\n"
             f"Количество удалённых пользователей: {removed_count}"
         )
+        print(f"Уведомление отправлено в чат {NOTIFY_CHAT_ID}")
     except Exception as e:
         print(f"Ошибка при отправке уведомления: {e}")
 
@@ -60,7 +61,7 @@ async def extract_chat_id(chat_link: str, context):
             return None
     return None  # Если ссылка не подходит, возвращаем None
 
-# Функция для обработки каждого чата из списка
+# Функция для извлечения чатов из файла и обработки каждого из них
 async def process_chats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         # Чтение чатов из файла
@@ -112,6 +113,7 @@ async def process_chats(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 banned_user_ids = await get_banned_users(context, chat_id)
 
                 if not banned_user_ids:
+                    print(f"Не найдено заблокированных пользователей в чате {chat_name} (ID: {chat_id})")
                     continue  # Если нет заблокированных пользователей, пропускаем этот чат
 
                 # Записываем ID заблокированных пользователей в файл
@@ -144,4 +146,21 @@ async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await process_chats(update, context)
 
 if __name__ == "__main__":
-    app = ApplicationBuilder().token(BOT_TOKEN)
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
+
+    # Добавляем обработчик для команды /unbanall
+    app.add_handler(CommandHandler("unbanall", unban_all))
+
+    # Публичный URL вашего проекта на Railway
+    PUBLIC_URL = "https://bottg-production-33d1.up.railway.app"
+
+    # URL для webhook
+    WEBHOOK_URL = f"{PUBLIC_URL}/bot{BOT_TOKEN}"
+
+    # Устанавливаем вебхук
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=int(os.environ.get("PORT", 8443)),
+        url_path=f"bot{BOT_TOKEN}",
+        webhook_url=WEBHOOK_URL,
+    )
