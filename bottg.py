@@ -1,25 +1,28 @@
 import os
+import subprocess
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 # Ваш токен
 BOT_TOKEN = "7411390045:AAEU9UqxnwRexaIvXO4bTl4yMZkvkik75Gw"
 
-# ID чата, в который нужно отправлять уведомления (например, для администратора)
+# ID чата, в который нужно отправлять уведомления
 NOTIFY_CHAT_ID = -1002226636763
 
-# Путь к файлу с ID пользователей
+# Путь к файлам с ID пользователей
 USER_IDS_FILE = "user_ids.txt"
+FAILED_UNBAN_FILE = "failed_unban_ids.txt"
+REMOVED_FROM_CHAT_FILE = "removed_from_chat.txt"  # Новый файл для сохранения информации о удалённых пользователях
 
-# Функция для получения ID чата
-async def send_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.effective_chat.id
-    await update.message.reply_text(f"ID этого чата: {chat_id}")
+# GitHub token для пуша изменений (Ваш токен)
+GITHUB_TOKEN = "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"
 
-# Функция для отправки уведомлений в конкретный чат
+# Путь к вашему репозиторию на GitHub
+GITHUB_REPO_URL = "https://github.com/your_username/your_repo.git"  # Замените на ваш репозиторий
+
+# Функция для отправки уведомлений в админ-чат
 async def send_notification_to_admin(context: ContextTypes.DEFAULT_TYPE, message: str, chat_username: str, removed_count: int):
     try:
-        # Отправляем уведомление в чат с ID NOTIFY_CHAT_ID
         await context.bot.send_message(
             NOTIFY_CHAT_ID,
             f"{message}\n\n"
@@ -29,13 +32,25 @@ async def send_notification_to_admin(context: ContextTypes.DEFAULT_TYPE, message
     except Exception as e:
         print(f"Ошибка при отправке уведомления: {e}")
 
-# Функция для разблокировки всех пользователей в чате
+# Функция для пуша файла в репозиторий GitHub
+def push_to_github():
+    try:
+        # Добавляем изменённый файл в git
+        subprocess.run(["git", "add", FAILED_UNBAN_FILE, REMOVED_FROM_CHAT_FILE], check=True)
+
+        # Создаём коммит
+        subprocess.run(["git", "commit", "-m", "Update failed_unban_ids.txt and removed_from_chat.txt"], check=True)
+
+        # Пушим изменения на GitHub с использованием токена
+        subprocess.run(
+            ["git", "push", f"https://{GITHUB_TOKEN}@{GITHUB_REPO_URL}"], check=True
+        )
+
+    except subprocess.CalledProcessError as e:
+        print(f"Ошибка при пуше в репозиторий: {e}")
+
+# Функция для обработки команды /unbanall
 async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Проверка на ID пользователя, который отправил команду
-    if update.effective_user.id != 6093206594:
-        await update.message.reply_text("Вы не имеете прав для выполнения этой команды.")
-        return
-    
     chat_id = update.effective_chat.id
     try:
         # Получаем информацию о чате
@@ -47,6 +62,8 @@ async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
             blocked_user_ids = [line.strip() for line in file.readlines() if line.strip().isdigit()]
         
         removed_count = 0  # Счётчик удалённых пользователей
+        failed_unban_ids = []  # Список для сохранения ID, которых не удалось разблокировать
+        removed_from_chat = []  # Список для сохранения информации о пользователях и чатах, из которых их удалили
 
         # Проходим по всем заблокированным пользователям по ID
         for user_id in blocked_user_ids:
@@ -55,9 +72,30 @@ async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await context.bot.unban_chat_member(chat_id, user_id)
                 print(f"Пользователь с ID {user_id} был разблокирован.")
                 removed_count += 1  # Увеличиваем счётчик удалённых пользователей
-                
+
+                # Сохраняем информацию о пользователе и чате, из которого его удалили
+                removed_from_chat.append(f"ID: {user_id}, Чат: @{chat_username}")
+
             except Exception as e:
                 print(f"Не удалось разблокировать пользователя с ID {user_id}: {e}")
+                failed_unban_ids.append(user_id)  # Добавляем ID в список неудачных разблокировок
+        
+        # Сохраняем список неудачных разблокировок в файл
+        if failed_unban_ids:
+            with open(FAILED_UNBAN_FILE, "a") as file:
+                for user_id in failed_unban_ids:
+                    file.write(f"{user_id}\n")
+            print(f"Неудачные попытки разблокировки записаны в {FAILED_UNBAN_FILE}.")
+
+        # Сохраняем информацию о пользователях, которых удалили, в файл
+        if removed_from_chat:
+            with open(REMOVED_FROM_CHAT_FILE, "a") as file:
+                for entry in removed_from_chat:
+                    file.write(f"{entry}\n")
+            print(f"Информация о пользователях, которых удалили, записана в {REMOVED_FROM_CHAT_FILE}.")
+
+        # Пушим изменения в репозиторий GitHub
+        push_to_github()
         
         # Отправляем уведомление о завершении разблокировки в нужный чат
         await send_notification_to_admin(context, "Все заблокированные пользователи были разблокированы.", chat_username, removed_count)
@@ -67,9 +105,6 @@ async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
-    
-    # Добавляем обработчик для команды /id
-    app.add_handler(CommandHandler("id", send_chat_id))
     
     # Добавляем обработчик для команды /unbanall
     app.add_handler(CommandHandler("unbanall", unban_all))
