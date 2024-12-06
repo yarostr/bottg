@@ -1,4 +1,5 @@
 import os
+import re
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
@@ -39,6 +40,13 @@ async def get_banned_users(context, chat_id):
         print(f"Ошибка при получении заблокированных пользователей: {e}")
     return banned_users
 
+# Функция для извлечения ID из ссылки на чат
+def extract_chat_id_from_link(chat_link: str):
+    match = re.match(r"https://t.me/([a-zA-Z0-9_]+)", chat_link)
+    if match:
+        return match.group(1)  # Возвращаем username чата
+    return None  # Если ссылка не подходит, возвращаем None
+
 # Функция для обработки каждого чата из списка
 async def process_chats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -55,8 +63,22 @@ async def process_chats(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if not chat:
                 continue  # Пропускаем пустые строки
 
-            chat_id = int(chat)  # Преобразуем строку в число
-            chat_links += f"https://t.me/{chat}\n"
+            # Если это ссылка на чат, извлекаем ID
+            if chat.startswith("https://"):
+                chat_id = extract_chat_id_from_link(chat)
+                if not chat_id:
+                    print(f"Невалидная ссылка на чат: {chat}")
+                    continue
+            else:
+                # Если это ID чата, пытаемся преобразовать в целое число
+                try:
+                    chat_id = int(chat)
+                except ValueError:
+                    print(f"Невалидный ID чата: {chat}")
+                    continue
+
+            # Формируем ссылку на чат
+            chat_links += f"https://t.me/{chat_id}\n"
 
             # Получаем список заблокированных пользователей
             banned_user_ids = await get_banned_users(context, chat_id)
@@ -100,12 +122,4 @@ if __name__ == "__main__":
     PUBLIC_URL = "https://bottg-production-33d1.up.railway.app"
 
     # URL для webhook
-    WEBHOOK_URL = f"{PUBLIC_URL}/bot{BOT_TOKEN}"
-
-    # Устанавливаем вебхук
-    app.run_webhook(
-        listen="0.0.0.0",
-        port=int(os.environ.get("PORT", 8443)),
-        url_path=f"bot{BOT_TOKEN}",
-        webhook_url=WEBHOOK_URL,
-    )
+    WEBHOOK_URL = f"{PUBLIC_URL
