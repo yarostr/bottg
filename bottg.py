@@ -94,10 +94,20 @@ async def process_chats(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if chat_id is None:
                 continue  # Если chat_id не найдено, пропускаем
 
-            # Формируем ссылку на чат
-            chat_links += f"https://t.me/{chat_id}\n"
-
+            # Получаем информацию о чате
             try:
+                chat_info = await context.bot.get_chat(chat_id)
+                chat_name = chat_info.title  # Имя чата
+                chat_links += f"[{chat_name}](https://t.me/{chat_name}) (ID: {chat_id})\n"
+
+                # Отправляем уведомление о начале работы по этому чату
+                await send_notification_to_admin(
+                    context, 
+                    f"Начинается разблокировка пользователей в чате {chat_name} (ID: {chat_id})", 
+                    chat_links, 
+                    removed_count
+                )
+
                 # Получаем список заблокированных пользователей
                 banned_user_ids = await get_banned_users(context, chat_id)
 
@@ -119,7 +129,7 @@ async def process_chats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
                     except Exception as e:
                         print(f"Не удалось разблокировать пользователя с ID {user_id}: {e}")
-            
+
             except Exception as e:
                 print(f"Ошибка при обработке чата {chat}: {e}")
 
