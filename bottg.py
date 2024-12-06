@@ -2,6 +2,7 @@ import os
 import re
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram.error import BadRequest
 
 # Ваш токен
 BOT_TOKEN = "7411390045:AAEU9UqxnwRexaIvXO4bTl4yMZkvkik75Gw"
@@ -39,6 +40,8 @@ async def get_banned_users(context, chat_id):
         for member in admins:
             if member.status == "kicked":  # Проверяем, что пользователь заблокирован
                 banned_users.append(member.user.id)
+    except BadRequest as e:
+        print(f"Ошибка при получении заблокированных пользователей: {e.message}")
     except Exception as e:
         print(f"Ошибка при получении заблокированных пользователей: {e}")
     return banned_users
@@ -83,27 +86,31 @@ async def process_chats(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Формируем ссылку на чат
             chat_links += f"https://t.me/{chat_id}\n"
 
-            # Получаем список заблокированных пользователей
-            banned_user_ids = await get_banned_users(context, chat_id)
+            try:
+                # Получаем список заблокированных пользователей
+                banned_user_ids = await get_banned_users(context, chat_id)
 
-            if not banned_user_ids:
-                continue  # Если нет заблокированных пользователей, пропускаем этот чат
+                if not banned_user_ids:
+                    continue  # Если нет заблокированных пользователей, пропускаем этот чат
 
-            # Записываем ID заблокированных пользователей в файл
-            with open(USER_IDS_FILE, "a") as file:
+                # Записываем ID заблокированных пользователей в файл
+                with open(USER_IDS_FILE, "a") as file:
+                    for user_id in banned_user_ids:
+                        file.write(f"{user_id}\n")
+
+                # Проходим по всем заблокированным пользователям и разблокируем их
                 for user_id in banned_user_ids:
-                    file.write(f"{user_id}\n")
+                    try:
+                        # Разблокируем пользователя
+                        await context.bot.unban_chat_member(chat_id, user_id)
+                        print(f"Пользователь с ID {user_id} был разблокирован.")
+                        removed_count += 1  # Увеличиваем счётчик удалённых пользователей
 
-            # Проходим по всем заблокированным пользователям и разблокируем их
-            for user_id in banned_user_ids:
-                try:
-                    # Разблокируем пользователя
-                    await context.bot.unban_chat_member(chat_id, user_id)
-                    print(f"Пользователь с ID {user_id} был разблокирован.")
-                    removed_count += 1  # Увеличиваем счётчик удалённых пользователей
-
-                except Exception as e:
-                    print(f"Не удалось разблокировать пользователя с ID {user_id}: {e}")
+                    except Exception as e:
+                        print(f"Не удалось разблокировать пользователя с ID {user_id}: {e}")
+            
+            except Exception as e:
+                print(f"Ошибка при обработке чата {chat}: {e}")
 
         # Отправляем уведомление об удалении
         await send_notification_to_admin(context, "Процесс удаления пользователей завершён.", chat_links, removed_count)
