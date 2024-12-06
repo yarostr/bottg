@@ -46,7 +46,7 @@ async def send_start_unban_notification(context: ContextTypes.DEFAULT_TYPE, chat
     except Exception as e:
         print(f"Ошибка при отправке уведомления о начале удаления: {e}")
 
-# Функция для пуша файла в репозиторий GitHub
+# Функция для пуша файла в репозиторию GitHub
 def push_to_github():
     try:
         # Добавляем изменённый файл в git
@@ -68,6 +68,11 @@ async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global stop_ban  # Используем глобальный флаг
     chat_id = update.effective_chat.id
     try:
+        # Проверяем, что команда /unbanall вызвана пользователем с ID 6093206594
+        if update.effective_user.id != 6093206594:
+            await update.message.reply_text("Эта команда доступна только для конкретного пользователя.")
+            return
+
         # Получаем информацию о чате
         chat = await context.bot.get_chat(chat_id)
         chat_username = chat.username if chat.username else "Без имени"  # Если имя чата отсутствует, выводим "Без имени"
@@ -86,7 +91,9 @@ async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Проходим по всем заблокированным пользователям по ID
         for user_id in blocked_user_ids:
             if stop_ban:  # Если флаг для остановки разбана установлен, выходим из цикла
+                await update.message.reply_text("Разблокировка остановлена.")
                 break
+
             try:
                 # Разблокируем пользователя
                 await context.bot.unban_chat_member(chat_id, user_id)
