@@ -6,7 +6,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, Messa
 # Ваш токен
 BOT_TOKEN = "7411390045:AAEU9UqxnwRexaIvXO4bTl4yMZkvkik75Gw"
 
-# ID чата, в который нужно отправлять уведомления (например, для администратора)
+# ID чата, в который нужно отправлять уведомления (основной чат)
 NOTIFY_CHAT_ID = -1002226636763
 
 # Путь к файлу с ID пользователей
@@ -20,10 +20,10 @@ async def send_chat_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     await update.message.reply_text(f"ID этого чата: {chat_id}")
 
-# Функция для отправки уведомлений в основной чат
+# Функция для отправки уведомлений только в основной чат
 async def send_notification_to_admin(context: ContextTypes.DEFAULT_TYPE, message: str, chat_username: str, removed_count: int):
     try:
-        # Отправляем уведомление в основной чат
+        # Отправляем уведомление в чат с ID NOTIFY_CHAT_ID
         await context.bot.send_message(
             NOTIFY_CHAT_ID,
             f"{message}\n\n"
