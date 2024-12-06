@@ -47,10 +47,17 @@ async def get_banned_users(context, chat_id):
     return banned_users
 
 # Функция для извлечения ID из ссылки на чат
-def extract_chat_id_from_link(chat_link: str):
+async def extract_chat_id(chat_link: str, context):
+    # Если это ссылка на чат, извлекаем username
     match = re.match(r"https://t.me/([a-zA-Z0-9_]+)", chat_link)
     if match:
-        return match.group(1)  # Возвращаем username чата
+        username = match.group(1)  # Возвращаем username чата
+        try:
+            chat = await context.bot.get_chat(username)
+            return chat.id  # Возвращаем числовой chat_id
+        except Exception as e:
+            print(f"Ошибка при получении chat_id для {username}: {e}")
+            return None
     return None  # Если ссылка не подходит, возвращаем None
 
 # Функция для обработки каждого чата из списка
@@ -69,9 +76,10 @@ async def process_chats(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if not chat:
                 continue  # Пропускаем пустые строки
 
-            # Если это ссылка на чат, извлекаем ID
+            chat_id = None
+            # Если это ссылка на чат, извлекаем chat_id
             if chat.startswith("https://"):
-                chat_id = extract_chat_id_from_link(chat)
+                chat_id = await extract_chat_id(chat, context)
                 if not chat_id:
                     print(f"Невалидная ссылка на чат: {chat}")
                     continue
@@ -82,6 +90,9 @@ async def process_chats(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 except ValueError:
                     print(f"Невалидный ID чата: {chat}")
                     continue
+
+            if chat_id is None:
+                continue  # Если chat_id не найдено, пропускаем
 
             # Формируем ссылку на чат
             chat_links += f"https://t.me/{chat_id}\n"
