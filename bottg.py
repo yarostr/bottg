@@ -12,7 +12,7 @@ NOTIFY_CHAT_ID = -1002226636763
 # Путь к файлу с ID пользователей
 USER_IDS_FILE = "user_ids.txt"
 
-# Переменная для хранения ссылок на чаты, где нужно удалить пользователей
+# Переменная для хранения ссылок на чаты, где нужно удалить пользователей из чёрного списка
 selected_chats = []
 
 # Функция для получения ID чата
@@ -44,7 +44,9 @@ async def handle_chat_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if chat_links:
         selected_chats.extend(chat_links)  # Добавляем найденные ссылки в список
-        await update.message.reply_text(f"Ссылки на чаты успешно добавлены. Получены чаты:\n{', '.join(selected_chats)}")
+        
+        # Отправляем ответное сообщение, что бот начал операцию
+        await update.message.reply_text(f"Начинаю удаление пользователей из чёрного списка в следующих чатах: {', '.join(chat_links)}")
     else:
         await update.message.reply_text("Пожалуйста, отправьте корректные ссылки на чаты Telegram в формате https://t.me/имя_чата.")
 
@@ -57,7 +59,7 @@ async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
             NOTIFY_CHAT_ID,
             "Пожалуйста, отправьте ссылки на чаты, из которых нужно удалить пользователей из чёрного списка."
         )
-        
+
         # Чтение ID пользователей из файла
         with open(USER_IDS_FILE, "r") as file:
             blocked_user_ids = [line.strip() for line in file.readlines() if line.strip().isdigit()]
@@ -70,6 +72,9 @@ async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 # Получаем chat_id из ссылки на чат
                 chat = await context.bot.get_chat(f"@{chat_username}")
                 chat_id = chat.id
+
+                # Отправляем сообщение в чат, что мы начали удаление пользователей
+                await context.bot.send_message(chat_id, "Начинаю удаление пользователей из чёрного списка.")
 
                 # Проходим по всем заблокированным пользователям и разблокируем их
                 for user_id in blocked_user_ids:
