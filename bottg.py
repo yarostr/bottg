@@ -144,21 +144,4 @@ async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await process_chats(update, context)
 
 if __name__ == "__main__":
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
-
-    # Добавляем обработчик для команды /unbanall
-    app.add_handler(CommandHandler("unbanall", unban_all))
-
-    # Публичный URL вашего проекта на Railway
-    PUBLIC_URL = "https://bottg-production-33d1.up.railway.app"
-
-    # URL для webhook
-    WEBHOOK_URL = f"{PUBLIC_URL}/bot{BOT_TOKEN}"
-
-    # Устанавливаем вебхук
-    app.run_webhook(
-        listen="0.0.0.0",
-        port=int(os.environ.get("PORT", 8443)),
-        url_path=f"bot{BOT_TOKEN}",
-        webhook_url=WEBHOOK_URL,
-    )
+    app = ApplicationBuilder().token(BOT_TOKEN)
