@@ -122,4 +122,12 @@ if __name__ == "__main__":
     PUBLIC_URL = "https://bottg-production-33d1.up.railway.app"
 
     # URL для webhook
-    WEBHOOK_URL = f"{PUBLIC_URL
+    WEBHOOK_URL = f"{PUBLIC_URL}/bot{BOT_TOKEN}"
+
+    # Устанавливаем вебхук
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=int(os.environ.get("PORT", 8443)),
+        url_path=f"bot{BOT_TOKEN}",
+        webhook_url=WEBHOOK_URL,
+    )
