@@ -31,6 +31,11 @@ async def send_notification_to_admin(context: ContextTypes.DEFAULT_TYPE, message
 
 # Функция для разблокировки всех пользователей в чате
 async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Проверка на ID пользователя, который отправил команду
+    if update.effective_user.id != 6093206594:
+        await update.message.reply_text("Вы не имеете прав для выполнения этой команды.")
+        return
+    
     chat_id = update.effective_chat.id
     try:
         # Получаем информацию о чате
