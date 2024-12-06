@@ -50,6 +50,20 @@ async def handle_chat_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("Пожалуйста, отправьте корректные ссылки на чаты Telegram в формате https://t.me/имя_чата.")
 
+# Функция для получения списка заблокированных пользователей
+async def get_blocked_users(chat_id: int, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        # Получаем список заблокированных пользователей
+        banned_users = await context.bot.get_chat_administrators(chat_id)
+        blocked_users = []
+        for admin in banned_users:
+            if admin.status == 'kicked':
+                blocked_users.append(admin.user.id)
+        return blocked_users
+    except Exception as e:
+        print(f"Не удалось получить список заблокированных пользователей в чате {chat_id}: {e}")
+        return []
+
 # Функция для разблокировки всех пользователей в чате
 async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
@@ -73,11 +87,17 @@ async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 chat = await context.bot.get_chat(f"@{chat_username}")
                 chat_id = chat.id
 
+                # Получаем список заблокированных пользователей
+                banned_users = await get_blocked_users(chat_id, context)
+                
+                # Логируем информацию о заблокированных пользователях
+                print(f"Заблокированные пользователи в чате @{chat_username}: {banned_users}")
+
                 # Отправляем сообщение в чат, что мы начали удаление пользователей
                 await context.bot.send_message(chat_id, "Начинаю удаление пользователей из чёрного списка.")
 
                 # Проходим по всем заблокированным пользователям и разблокируем их
-                for user_id in blocked_user_ids:
+                for user_id in banned_users:
                     try:
                         # Разблокируем пользователя
                         await context.bot.unban_chat_member(chat_id, user_id)
