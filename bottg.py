@@ -20,6 +20,9 @@ GITHUB_TOKEN = "github_pat_11AUN2XNQ05SokKbUAeKVL_azpjoZKaIVyDDR9n8WbwLn26urDOKS
 # Путь к вашему репозиторию на GitHub
 GITHUB_REPO_URL = "https://github.com/your_username/your_repo.git"  # Замените на ваш репозиторий
 
+# Флаг для остановки разблокировки
+stop_ban = False
+
 # Функция для отправки уведомлений в админ-чат
 async def send_notification_to_admin(context: ContextTypes.DEFAULT_TYPE, message: str, chat_username: str, removed_count: int):
     try:
@@ -31,6 +34,17 @@ async def send_notification_to_admin(context: ContextTypes.DEFAULT_TYPE, message
         )
     except Exception as e:
         print(f"Ошибка при отправке уведомления: {e}")
+
+# Функция для отправки уведомления о начале удаления из чс
+async def send_start_unban_notification(context: ContextTypes.DEFAULT_TYPE, chat_username: str):
+    try:
+        # Отправляем уведомление о начале процесса
+        await context.bot.send_message(
+            NOTIFY_CHAT_ID,
+            f"Начинаю удаление пользователей из чёрного списка в чате @{chat_username}."
+        )
+    except Exception as e:
+        print(f"Ошибка при отправке уведомления о начале удаления: {e}")
 
 # Функция для пуша файла в репозиторий GitHub
 def push_to_github():
@@ -51,11 +65,15 @@ def push_to_github():
 
 # Функция для обработки команды /unbanall
 async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global stop_ban  # Используем глобальный флаг
     chat_id = update.effective_chat.id
     try:
         # Получаем информацию о чате
         chat = await context.bot.get_chat(chat_id)
         chat_username = chat.username if chat.username else "Без имени"  # Если имя чата отсутствует, выводим "Без имени"
+
+        # Отправляем уведомление о начале разблокировки в админ-чат
+        await send_start_unban_notification(context, chat_username)
 
         # Чтение ID пользователей из файла
         with open(USER_IDS_FILE, "r") as file:
@@ -67,10 +85,12 @@ async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Проходим по всем заблокированным пользователям по ID
         for user_id in blocked_user_ids:
+            if stop_ban:  # Если флаг для остановки разбана установлен, выходим из цикла
+                break
             try:
                 # Разблокируем пользователя
                 await context.bot.unban_chat_member(chat_id, user_id)
-                print(f"Пользователь с ID {user_id} был разблокирован.")
+                print(f"Пользователь с ID {user_id} был разблокирован в чате {chat_username}.")
                 removed_count += 1  # Увеличиваем счётчик удалённых пользователей
 
                 # Сохраняем информацию о пользователе и чате, из которого его удалили
@@ -103,11 +123,20 @@ async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"Произошла ошибка при попытке разблокировать пользователей: {str(e)}")
 
+# Функция для обработки команды /stopban
+async def stop_ban_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global stop_ban
+    stop_ban = True  # Устанавливаем флаг для остановки разблокировки
+    await update.message.reply_text("Процесс разблокировки остановлен.")
+
 if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     
     # Добавляем обработчик для команды /unbanall
     app.add_handler(CommandHandler("unbanall", unban_all))
+
+    # Добавляем обработчик для команды /stopban
+    app.add_handler(CommandHandler("stopban", stop_ban_command))
 
     # Публичный URL вашего проекта на Railway
     PUBLIC_URL = "https://bottg-production-33d1.up.railway.app"
