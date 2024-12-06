@@ -1,4 +1,5 @@
 import os
+import re
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
 
@@ -32,16 +33,20 @@ async def send_notification_to_admin(context: ContextTypes.DEFAULT_TYPE, message
     except Exception as e:
         print(f"Ошибка при отправке уведомления: {e}")
 
-# Функция для обработки ссылки на чаты
+# Функция для обработки ссылок на чаты
 async def handle_chat_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global selected_chats
     # Получаем текст сообщения (ссылки на чаты)
     chat_links = update.message.text.strip()
 
-    # Разделяем ссылки (если они есть) и сохраняем их
-    selected_chats = chat_links.splitlines()
+    # Используем регулярное выражение для извлечения ссылок на чаты
+    chat_links = re.findall(r'https://t.me/([a-zA-Z0-9_]+)', chat_links)
     
-    await update.message.reply_text(f"Ссылки на чаты успешно добавлены. Получены чаты:\n{', '.join(selected_chats)}")
+    if chat_links:
+        selected_chats.extend(chat_links)  # Добавляем найденные ссылки в список
+        await update.message.reply_text(f"Ссылки на чаты успешно добавлены. Получены чаты:\n{', '.join(selected_chats)}")
+    else:
+        await update.message.reply_text("Пожалуйста, отправьте корректные ссылки на чаты Telegram в формате https://t.me/имя_чата.")
 
 # Функция для разблокировки всех пользователей в чате
 async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -60,12 +65,11 @@ async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
         removed_count = 0  # Счётчик удалённых пользователей
 
         # Проходим по всем чаты, указанным в selected_chats
-        for chat_link in selected_chats:
+        for chat_username in selected_chats:
             try:
                 # Получаем chat_id из ссылки на чат
-                chat = await context.bot.get_chat(chat_link)
+                chat = await context.bot.get_chat(f"@{chat_username}")
                 chat_id = chat.id
-                chat_username = chat.username if chat.username else "Без имени"
 
                 # Проходим по всем заблокированным пользователям и разблокируем их
                 for user_id in blocked_user_ids:
@@ -82,8 +86,8 @@ async def unban_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await send_notification_to_admin(context, "Все заблокированные пользователи были разблокированы.", chat_username, removed_count)
 
             except Exception as e:
-                print(f"Не удалось обработать чат {chat_link}: {e}")
-                await update.message.reply_text(f"Произошла ошибка при попытке работать с чатом {chat_link}: {e}")
+                print(f"Не удалось обработать чат @{chat_username}: {e}")
+                await update.message.reply_text(f"Произошла ошибка при попытке работать с чатом @{chat_username}: {e}")
 
     except Exception as e:
         await update.message.reply_text(f"Произошла ошибка при попытке разблокировать пользователей: {str(e)}")
@@ -98,7 +102,7 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("unbanall", unban_all))
 
     # Добавляем обработчик для обработки сообщений с ссылками на чаты
-    app.add_handler(MessageHandler(filters.TEXT, handle_chat_links))
+    app.add_handler(MessageHandler(filters.TEXT & filters.Regex(r'https://t.me/'), handle_chat_links))
 
     # Публичный URL вашего проекта на Railway
     PUBLIC_URL = "https://bottg-production-33d1.up.railway.app"
