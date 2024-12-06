@@ -32,8 +32,11 @@ async def send_notification_to_admin(context: ContextTypes.DEFAULT_TYPE, message
 async def get_banned_users(context, chat_id):
     banned_users = []
     try:
-        # Получаем список всех заблокированных пользователей
-        async for member in context.bot.get_chat_administrators(chat_id):
+        # Получаем список всех администраторов чата
+        admins = await context.bot.get_chat_administrators(chat_id)
+
+        # Перебираем администраторов и проверяем статус
+        for member in admins:
             if member.status == "kicked":  # Проверяем, что пользователь заблокирован
                 banned_users.append(member.user.id)
     except Exception as e:
